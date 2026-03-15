@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校友味蕾 - 大学城美食地图</title>
+    <!-- 引入 Tailwind CSS 用于快速美化 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入地图样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 400px; border-radius: 12px; }
+        .random-btn { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .random-btn:active { transform: scale(0.9); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- 导航栏 -->
+    <nav class="bg-blue-600 text-white p-4 shadow-lg sticky top-0 z-[1000]">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center">
+                📍 大学城美食地图
+            </h1>
+            <select class="bg-blue-700 text-sm border-none rounded px-2 py-1 outline-none">
+                <option>全部高校联盟</option>
+                <option>工业大学</option>
+                <option>师范大学</option>
+                <option>医科大学</option>
+            </select>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto p-4 space-y-6">
+        
+        <!-- 地图展示区 -->
+        <section class="bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+            <div id="map"></div>
+            <p class="text-center text-xs text-gray-400 mt-2">点击地图图标查看详情 | 基于 OpenStreetMap</p>
+        </section>
+
+        <!-- 决策工具：今天吃什么 -->
+        <section class="flex flex-col items-center py-6 bg-gradient-to-r from-orange-400 to-red-400 rounded-2xl text-white shadow-inner">
+            <h3 class="text-lg font-medium mb-3">纠结症救星 🎲</h3>
+            <button onclick="pickRandom()" class="random-btn bg-white text-orange-500 px-8 py-3 rounded-full font-bold shadow-xl hover:bg-orange-50">
+                帮我选一个！
+            </button>
+            <div id="pick-result" class="mt-4 font-bold text-xl hidden animate-bounce"></div>
+        </section>
+
+        <!-- 餐厅列表 -->
+        <section>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">附近推荐</h2>
+                <div class="flex gap-2">
+                    <span class="px-3 py-1 bg-blue-100 text-blue-600 text-xs rounded-full">人均<30</span>
+                    <span class="px-3 py-1 bg-green-100 text-green-600 text-xs rounded-full">有插座</span>
+                </div>
+            </div>
+            
+            <div id="restaurant-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 列表由 JS 渲染 -->
+            </div>
+        </section>
+    </main>
+
+    <!-- 引入地图 JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 1. 模拟数据：大学城周边的餐厅
+        const restaurants = [
+            { id: 1, name: "后街秘制麻辣烫", lat: 39.915, lng: 116.404, tag: "月底救急", price: 15, desc: "全校最辣，但真的香！" },
+            { id: 2, name: "研习社咖啡", lat: 39.920, lng: 116.410, tag: "有插座自习", price: 32, desc: "环境极安静，适合赶论文。" },
+            { id: 3, name: "大叔东北饺子", lat: 39.910, lng: 116.395, tag: "分量极大", price: 22, desc: "一份饺子管一天，实惠之选。" },
+            { id: 4, name: "校门口酸汤鱼", lat: 39.925, lng: 116.400, tag: "宿舍聚餐", price: 45, desc: "开学聚餐老地方，汤很好喝。" }
+        ];
+
+        // 2. 初始化地图
+        const map = L.map('map').setView([39.915, 116.404], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // 3. 渲染餐厅列表和地图标记
+        const listContainer = document.getElementById('restaurant-list');
+        
+        restaurants.forEach(res => {
+            // 添加地图标记
+            L.marker([res.lat, res.lng]).addTo(map)
+                .bindPopup(`<b>${res.name}</b><br>${res.desc}`);
+
+            // 添加侧边列表项
+            const item = document.createElement('div');
+            item.className = "bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
+            item.innerHTML = `
+                <div class="flex justify-between">
+                    <h3 class="font-bold text-lg text-blue-800">${res.name}</h3>
+                    <span class="text-orange-500 font-bold">￥${res.price}/人</span>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">${res.desc}</p>
+                <span class="inline-block mt-2 px-2 py-0.5 bg-gray-100 text-gray-400 text-[10px] rounded uppercase">${res.tag}</span>
+            `;
+            listContainer.appendChild(item);
+        });
+
+        // 4. “今天吃什么”逻辑
+        function pickRandom() {
+            const resultDiv = document.getElementById('pick-result');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerText = "正在疯狂挑选...";
+            
+            setTimeout(() => {
+                const random = restaurants[Math.floor(Math.random() * restaurants.length)];
+                resultDiv.innerText = `🎉 今天就吃：${random.name}！`;
+            }, 800);
+        }
+    </script>
+</body>
+</html>
